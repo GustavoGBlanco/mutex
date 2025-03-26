@@ -2,69 +2,53 @@
 using System;
 using System.Threading;
 
-class MutexExamplesApp
+class Program
 {
     static void Main()
     {
+        Console.WriteLine("🧪 Ejecutando ejemplos de Mutex en C#...");
+
         Console.WriteLine("----------Ejemplo 1----------");
-        Console.WriteLine(MutexSeccionCritica.Ejecutar());
-        Console.WriteLine();
+        new Thread(MutexExamples.AccesoUnico).Start();
+        Thread.Sleep(500);
 
         Console.WriteLine("----------Ejemplo 2----------");
-        for (int i = 0; i < 1000; i++) new Thread(MutexContadorSeguro.Incrementar).Start();
-        Thread.Sleep(500);
-        Console.WriteLine("Contador final: " + MutexContadorSeguro.Obtener());
-        Console.WriteLine();
+        new Thread(MutexExamples.AccesoEntreProcesos).Start();
+        Thread.Sleep(700);
 
         Console.WriteLine("----------Ejemplo 3----------");
-        for (int i = 1; i <= 5; i++)
-        {
-            string usuario = $"Usuario{i}";
-            new Thread(() => Console.WriteLine(MutexAccesoRecurso.Acceder(usuario))).Start();
-        }
+        new Thread(() => MutexExamples.EscribirLog("Log desde el ejemplo 3")).Start();
         Thread.Sleep(500);
-        Console.WriteLine();
 
         Console.WriteLine("----------Ejemplo 4----------");
-        MutexArchivo.Escribir("Línea escrita por Mutex");
-        Console.WriteLine("Texto escrito en archivo 'registro.txt'");
-        Console.WriteLine();
+        new Thread(() => MutexExamples.SeccionProtegida("Hilo 1")).Start();
+        Thread.Sleep(500);
 
         Console.WriteLine("----------Ejemplo 5----------");
-        MutexCola.Encolar("A");
-        MutexCola.Encolar("B");
-        Console.WriteLine("Desencolado: " + MutexCola.Desencolar());
-        Console.WriteLine();
+        new Thread(() => MutexExamples.IntentarAcceso("Hilo 2")).Start();
+        Thread.Sleep(600);
 
         Console.WriteLine("----------Ejemplo 6----------");
-        new Thread(() => MutexLogger.Log("Desde hilo 1")).Start();
-        new Thread(() => MutexLogger.Log("Desde hilo 2")).Start();
+        bool unica = MutexExamples.VerificarInstanciaUnica();
+        Console.WriteLine(unica ? "Instancia única: OK" : "Ya hay una instancia corriendo");
         Thread.Sleep(500);
-        Console.WriteLine();
 
         Console.WriteLine("----------Ejemplo 7----------");
-        Console.WriteLine(MutexConTimeout.Intentar());
-        Console.WriteLine();
+        new Thread(MutexExamples.AccederRecursoCompartido).Start();
+        Thread.Sleep(500);
 
         Console.WriteLine("----------Ejemplo 8----------");
-        for (int i = 1; i <= 5; i++)
-        {
-            string usuario = $"Cliente{i}";
-            new Thread(() => Console.WriteLine(MutexStock.Comprar(usuario))).Start();
-        }
+        new Thread(() => MutexExamples.EscribirBaseDatos("Proceso A")).Start();
         Thread.Sleep(500);
-        Console.WriteLine();
 
         Console.WriteLine("----------Ejemplo 9----------");
-        new Thread(() => Console.WriteLine(MutexProductorConsumidor.Consumir())).Start();
-        Thread.Sleep(200);
-        Console.WriteLine("Produciendo...");
-        MutexProductorConsumidor.Producir(123);
-        Thread.Sleep(500);
-        Console.WriteLine();
+        new Thread(MutexExamples.AccesoSecuencial).Start();
+        Thread.Sleep(600);
 
         Console.WriteLine("----------Ejemplo 10----------");
-        Console.WriteLine(MutexReinicio.Reiniciar());
-        Console.WriteLine();
+        new Thread(MutexExamples.AccesoCritico).Start();
+        Thread.Sleep(600);
+
+        Console.WriteLine("✅ Fin de los ejemplos.");
     }
 }

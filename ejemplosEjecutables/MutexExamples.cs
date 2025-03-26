@@ -1,175 +1,127 @@
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
-public static class MutexSeccionCritica
+public static class MutexExamples
 {
-    private static readonly Mutex _mutex = new();
+    private static Mutex _mutex = new();
+    private static Mutex _mutexGlobal = new(false, "Global\\MiApp_Mutex");
+    private static Mutex _archivoMutex = new(false, "Global\\ArchivoLog");
+    private static Mutex _mutexUnico = new();
+    private static Mutex _mutexModulo = new(false, "Global\\ModuloShared");
+    private static Mutex _mutexBD = new();
+    private static Mutex _mutexSecuencia = new(false, "Global\\SecuenciaProcesos");
+    private static Mutex _mutexRecursoCritico = new();
 
-    public static string Ejecutar()
-    {
-        _mutex.WaitOne();
-        try { return "Acceso concedido a sección crítica"; }
-        finally { _mutex.ReleaseMutex(); }
-    }
-}
-
-public static class MutexContadorSeguro
-{
-    private static readonly Mutex _mutex = new();
-    private static int _contador = 0;
-
-    public static void Incrementar()
-    {
-        _mutex.WaitOne();
-        try { _contador++; }
-        finally { _mutex.ReleaseMutex(); }
-    }
-
-    public static int Obtener()
-    {
-        _mutex.WaitOne();
-        try { return _contador; }
-        finally { _mutex.ReleaseMutex(); }
-    }
-}
-
-public static class MutexAccesoRecurso
-{
-    private static readonly Mutex _mutex = new();
-
-    public static string Acceder(string usuario)
-    {
-        _mutex.WaitOne();
-        try { return $"{usuario} accedió al recurso"; }
-        finally { _mutex.ReleaseMutex(); }
-    }
-}
-
-public static class MutexArchivo
-{
-    private static readonly Mutex _mutex = new();
-
-    public static void Escribir(string mensaje)
+    public static void AccesoUnico()
     {
         _mutex.WaitOne();
         try
         {
-            File.AppendAllText("registro.txt", mensaje + Environment.NewLine);
+            Console.WriteLine("Ejecutando sección crítica con Mutex.");
+            Thread.Sleep(300);
         }
         finally { _mutex.ReleaseMutex(); }
     }
-}
 
-public static class MutexCola
-{
-    private static readonly Mutex _mutex = new();
-    private static Queue<string> _cola = new();
-
-    public static void Encolar(string dato)
+    public static void AccesoEntreProcesos()
     {
-        _mutex.WaitOne();
-        try { _cola.Enqueue(dato); }
-        finally { _mutex.ReleaseMutex(); }
+        _mutexGlobal.WaitOne();
+        try
+        {
+            Console.WriteLine("Sección crítica protegida entre procesos.");
+            Thread.Sleep(500);
+        }
+        finally { _mutexGlobal.ReleaseMutex(); }
     }
 
-    public static string Desencolar()
+    public static void EscribirLog(string mensaje)
+    {
+        _archivoMutex.WaitOne();
+        try
+        {
+            File.AppendAllText("log_global.txt", mensaje + Environment.NewLine);
+        }
+        finally { _archivoMutex.ReleaseMutex(); }
+    }
+
+    public static void SeccionProtegida(string nombre)
     {
         _mutex.WaitOne();
         try
         {
-            return _cola.Count > 0 ? _cola.Dequeue() : "Cola vacía";
+            Console.WriteLine($"{nombre} accedió a la sección crítica.");
+            Thread.Sleep(300);
         }
         finally { _mutex.ReleaseMutex(); }
     }
-}
 
-public static class MutexLogger
-{
-    private static readonly Mutex _mutex = new();
-
-    public static void Log(string mensaje)
-    {
-        _mutex.WaitOne();
-        try { Console.WriteLine($"[Log] {DateTime.Now}: {mensaje}"); }
-        finally { _mutex.ReleaseMutex(); }
-    }
-}
-
-public static class MutexConTimeout
-{
-    private static readonly Mutex _mutex = new();
-
-    public static string Intentar()
+    public static void IntentarAcceso(string nombre)
     {
         if (_mutex.WaitOne(500))
         {
-            try { return "Entró con éxito"; }
+            try
+            {
+                Console.WriteLine($"{nombre} accedió a tiempo.");
+                Thread.Sleep(300);
+            }
             finally { _mutex.ReleaseMutex(); }
         }
-        return "Timeout al esperar Mutex";
+        else
+        {
+            Console.WriteLine($"{nombre} no pudo obtener el Mutex (timeout).");
+        }
     }
-}
 
-public static class MutexStock
-{
-    private static readonly Mutex _mutex = new();
-    private static int _stock = 3;
-
-    public static string Comprar(string usuario)
+    public static bool VerificarInstanciaUnica()
     {
-        _mutex.WaitOne();
+        bool creadaNueva;
+        _mutexUnico = new Mutex(true, "Global\\MiAplicacionUnica", out creadaNueva);
+        return creadaNueva;
+    }
+
+    public static void AccederRecursoCompartido()
+    {
+        _mutexModulo.WaitOne();
         try
         {
-            if (_stock > 0)
-            {
-                _stock--;
-                return $"{usuario} compró. Stock: {_stock}";
-            }
-            return $"{usuario} no pudo comprar. Sin stock.";
+            Console.WriteLine("Módulo accediendo a recurso compartido.");
+            Thread.Sleep(300);
         }
-        finally { _mutex.ReleaseMutex(); }
-    }
-}
-
-public static class MutexProductorConsumidor
-{
-    private static readonly Mutex _mutex = new();
-    private static Queue<int> _cola = new();
-
-    public static void Producir(int valor)
-    {
-        _mutex.WaitOne();
-        try { _cola.Enqueue(valor); }
-        finally { _mutex.ReleaseMutex(); }
+        finally { _mutexModulo.ReleaseMutex(); }
     }
 
-    public static string Consumir()
+    public static void EscribirBaseDatos(string nombre)
     {
-        _mutex.WaitOne();
+        _mutexBD.WaitOne();
         try
         {
-            return _cola.Count > 0 ? $"Consumido: {_cola.Dequeue()}" : "Cola vacía";
+            Console.WriteLine($"{nombre} escribiendo en BD...");
+            Thread.Sleep(300);
         }
-        finally { _mutex.ReleaseMutex(); }
+        finally { _mutexBD.ReleaseMutex(); }
     }
-}
 
-public static class MutexReinicio
-{
-    private static readonly Mutex _mutex = new();
-    private static int _valor = 100;
-
-    public static string Reiniciar()
+    public static void AccesoSecuencial()
     {
-        _mutex.WaitOne();
+        _mutexSecuencia.WaitOne();
         try
         {
-            _valor = 0;
-            return $"Recurso reiniciado. Valor actual: {_valor}";
+            Console.WriteLine("Proceso ejecutando su parte secuencial.");
+            Thread.Sleep(400);
         }
-        finally { _mutex.ReleaseMutex(); }
+        finally { _mutexSecuencia.ReleaseMutex(); }
+    }
+
+    public static void AccesoCritico()
+    {
+        _mutexRecursoCritico.WaitOne();
+        try
+        {
+            Console.WriteLine("Accediendo a red y disco de forma segura.");
+            Thread.Sleep(500);
+        }
+        finally { _mutexRecursoCritico.ReleaseMutex(); }
     }
 }
