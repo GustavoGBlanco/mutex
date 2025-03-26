@@ -89,5 +89,3 @@ class Program
 | ❌ No lo uses para sincronización interna de hilos | `lock` o `SemaphoreSlim` es mejor |
 
 ---
-
-✅ Este fue el Módulo 3. En el siguiente veremos `SemaphoreSlim`, ideal para controlar acceso limitado concurrente dentro de una app.
